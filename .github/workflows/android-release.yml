@@ -115,7 +115,8 @@ jobs:
         with:
           name: app-release-bundle-aab
           path: |
-            app/build/outputs/bundle/release/*.aab
+            app/build/outputs/bundle/**/*.aab
+            app/build/intermediates/intermediary_bundle/**/*.aab
             .build-outputs/*.aab
           if-no-files-found: warn
           retention-days: 30
