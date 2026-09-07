@@ -30,7 +30,14 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew || true
 
       - name: Setup Keystore from Secrets (If Available)
         env:
@@ -48,11 +55,21 @@ jobs:
 
       - name: Build Release APK
         if: ${{ github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both' || github.event_name == 'push' }}
-        run: gradle assembleRelease --stacktrace
+        run: |
+          if [ -f "./gradlew" ]; then
+            ./gradlew assembleRelease --no-daemon --stacktrace
+          else
+            gradle assembleRelease --no-daemon --stacktrace
+          fi
 
       - name: Build Google Play AAB Bundle
         if: ${{ github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'both' || github.event_name == 'push' }}
-        run: gradle bundleRelease --stacktrace
+        run: |
+          if [ -f "./gradlew" ]; then
+            ./gradlew bundleRelease --no-daemon --stacktrace
+          else
+            gradle bundleRelease --no-daemon --stacktrace
+          fi
 
       - name: Upload Release APK
         if: ${{ github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both' || github.event_name == 'push' }}
