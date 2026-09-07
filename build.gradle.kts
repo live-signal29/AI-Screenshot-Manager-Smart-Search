@@ -7,3 +7,15 @@ plugins {
   alias(libs.plugins.secrets) apply false
   alias(libs.plugins.google.services) apply false
 }
+
+// Automatically ensure debug.keystore exists before any subproject evaluates
+val debugKeystore = file("debug.keystore")
+if (!debugKeystore.exists()) {
+  val base64File = file("debug.keystore.base64")
+  if (base64File.exists()) {
+    try {
+      val decoded = java.util.Base64.getMimeDecoder().decode(base64File.readText().trim())
+      debugKeystore.writeBytes(decoded)
+    } catch (_: Exception) {}
+  }
+}
