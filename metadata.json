@@ -1,0 +1,6 @@
+{
+  "name": "AI Screenshot Manager – Smart Search",
+  "description": "Intelligent, privacy-first screenshot management app with smart natural language search, on-device OCR, duplicate detection, and storage cleaner.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
