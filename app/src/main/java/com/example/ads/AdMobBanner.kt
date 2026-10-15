@@ -27,8 +27,14 @@ import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 
 @Composable
 fun AdMobBanner(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isPremium: Boolean = false
 ) {
+    if (isPremium) {
+        // Premium users get completely ad-free experience!
+        return
+    }
+
     if (LocalInspectionMode.current || !AdMobConfig.isBannerConfigured) {
         Box(
             modifier = modifier
@@ -88,7 +94,11 @@ object InterstitialAdManager {
      * Shows an interstitial ad only at natural workflow transitions (e.g. after a complete scan or after storage clean).
      * Strictly avoids interrupting viewing, zoom, editing, or active operations.
      */
-    fun showIfAvailable(activity: Activity, onDismissed: () -> Unit = {}) {
+    fun showIfAvailable(activity: Activity, isPremium: Boolean = false, onDismissed: () -> Unit = {}) {
+        if (isPremium) {
+            onDismissed()
+            return
+        }
         val now = System.currentTimeMillis()
         if (now - lastAdShownTimestamp < COOLDOWN_MS) {
             onDismissed()

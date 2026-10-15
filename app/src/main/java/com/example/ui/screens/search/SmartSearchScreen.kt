@@ -72,6 +72,7 @@ fun SmartSearchScreen(
     onNavigateToDetail: (id: Long) -> Unit
 ) {
     val searchState by viewModel.searchUiState.collectAsState()
+    val isPremium by viewModel.isPremium.collectAsState()
     var searchInput by remember { mutableStateOf(searchState.query) }
 
     val sampleQueries = listOf(
@@ -110,7 +111,7 @@ fun SmartSearchScreen(
             )
         },
         bottomBar = {
-            AdMobBanner()
+            AdMobBanner(isPremium = isPremium)
         }
     ) { paddingValues ->
         Column(

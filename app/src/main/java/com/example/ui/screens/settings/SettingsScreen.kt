@@ -86,6 +86,7 @@ fun SettingsScreen(
     val isAiEnabled by viewModel.isAiEnabled.collectAsState()
     val aiApiKey by viewModel.aiApiKey.collectAsState()
     val aiEndpoint by viewModel.aiApiEndpoint.collectAsState()
+    val isPremium by viewModel.isPremium.collectAsState()
 
     var showApiKeyDialog by remember { mutableStateOf(false) }
     var tempApiKey by remember { mutableStateOf("") }
@@ -114,7 +115,7 @@ fun SettingsScreen(
             )
         },
         bottomBar = {
-            AdMobBanner()
+            AdMobBanner(isPremium = isPremium)
         }
     ) { paddingValues ->
         Column(
@@ -126,6 +127,9 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Pro / Premium Membership Section
+            PremiumSection(viewModel = viewModel)
+
             // Appearance Section
             SettingsSectionHeader(title = "Appearance")
             Card(

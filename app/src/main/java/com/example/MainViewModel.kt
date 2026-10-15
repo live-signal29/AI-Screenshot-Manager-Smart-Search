@@ -29,6 +29,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = ScreenshotRepository(application)
     private val preferences = UserPreferencesRepository(application)
+    private val billingManager = com.example.billing.BillingManager(application, preferences, viewModelScope)
+
+    val isPremium: StateFlow<Boolean> = preferences.isPremium
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    val billingProducts = billingManager.products
+    val billingMessage = billingManager.purchaseMessage
+    val isBillingConnected = billingManager.isConnected
+    val isBillingProcessing = billingManager.isProcessing
 
     val allScreenshots: StateFlow<List<ScreenshotEntity>> = repository.allScreenshotsFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -91,6 +100,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val searchUiState: StateFlow<SearchUiState> = _searchUiState.asStateFlow()
 
     init {
+        // Initialize Google Play Billing
+        billingManager.initialize()
+
         // Initial quick load and duplicate check
         viewModelScope.launch {
             refreshDuplicateClusters()
@@ -211,5 +223,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     suspend fun askAiQuestion(screenshot: ScreenshotEntity, question: String): String {
         return repository.askAiQuestion(screenshot, question)
+    }
+
+    fun launchPurchase(activity: android.app.Activity, productId: String) {
+        val details = billingProducts.value[productId]
+        if (details != null) {
+            billingManager.launchPurchaseFlow(activity, details)
+        } else {
+            // Re-query products in case connection was delayed
+            billingManager.queryProducts()
+            billingManager.launchPurchaseFlow(activity, details ?: return)
+        }
+    }
+
+    fun restorePurchases(onComplete: ((Boolean) -> Unit)? = null) {
+        billingManager.restorePurchases(onComplete)
+    }
+
+    fun clearBillingMessage() {
+        billingManager.clearMessage()
+    }
+
+    fun setPremium(isPremium: Boolean) {
+        viewModelScope.launch {
+            preferences.setPremium(isPremium)
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        billingManager.destroy()
     }
 }

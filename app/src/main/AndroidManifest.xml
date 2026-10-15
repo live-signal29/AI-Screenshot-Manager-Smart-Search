@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Google Play Billing Permission for in-app purchases & subscriptions -->
+    <uses-permission android:name="com.android.vending.BILLING" />
     <!-- Android 13+ media permissions -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <!-- Legacy media permissions for Android 12 and below -->

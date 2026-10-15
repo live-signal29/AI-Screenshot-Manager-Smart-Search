@@ -91,6 +91,7 @@ fun HomeScreen(
     val allScreenshots by viewModel.allScreenshots.collectAsState()
     val favorites by viewModel.favorites.collectAsState()
     val scanProgress by viewModel.scanProgress.collectAsState()
+    val isPremium by viewModel.isPremium.collectAsState()
 
     val primaryCategories = listOf(
         CategoryClassifier.CATEGORY_RECEIPTS,
@@ -154,7 +155,7 @@ fun HomeScreen(
             )
         },
         bottomBar = {
-            AdMobBanner()
+            AdMobBanner(isPremium = isPremium)
         }
     ) { paddingValues ->
         LazyColumn(

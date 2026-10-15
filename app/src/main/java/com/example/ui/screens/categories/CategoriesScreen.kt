@@ -90,6 +90,7 @@ fun CategoriesScreen(
     onCategoryClick: (category: String) -> Unit
 ) {
     val categoryStats by viewModel.categoryStats.collectAsState()
+    val isPremium by viewModel.isPremium.collectAsState()
     val statsMap = categoryStats.associateBy { it.category }
 
     Scaffold(
@@ -112,7 +113,7 @@ fun CategoriesScreen(
             )
         },
         bottomBar = {
-            AdMobBanner()
+            AdMobBanner(isPremium = isPremium)
         }
     ) { paddingValues ->
         LazyVerticalGrid(

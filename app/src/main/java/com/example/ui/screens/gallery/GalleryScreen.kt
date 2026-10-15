@@ -120,6 +120,7 @@ fun GalleryScreen(
 ) {
     val context = LocalContext.current
     val allScreenshots by viewModel.allScreenshots.collectAsState()
+    val isPremium by viewModel.isPremium.collectAsState()
 
     var isGridView by remember { mutableStateOf(true) }
     var selectedSort by remember { mutableStateOf(SortOption.NEWEST) }
@@ -314,7 +315,7 @@ fun GalleryScreen(
             }
         },
         bottomBar = {
-            AdMobBanner()
+            AdMobBanner(isPremium = isPremium)
         }
     ) { paddingValues ->
         Column(

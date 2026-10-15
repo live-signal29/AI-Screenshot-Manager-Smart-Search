@@ -99,6 +99,7 @@ fun StorageCleanerScreen(
     val duplicateClusters by viewModel.duplicateClusters.collectAsState()
     val largeScreenshots by viewModel.largeScreenshots.collectAsState()
     val removableScreenshots by viewModel.removableScreenshots.collectAsState()
+    val isPremium by viewModel.isPremium.collectAsState()
 
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Duplicates", "Removable", "Large (>3MB)")
@@ -186,7 +187,7 @@ fun StorageCleanerScreen(
                         }
                     }
                 }
-                AdMobBanner()
+                AdMobBanner(isPremium = isPremium)
             }
         }
     ) { paddingValues ->
@@ -374,7 +375,7 @@ fun StorageCleanerScreen(
 
                         // Trigger natural transition interstitial ad (policy compliant cooldown applied)
                         if (activity != null) {
-                            InterstitialAdManager.showIfAvailable(activity)
+                            InterstitialAdManager.showIfAvailable(activity, isPremium = isPremium)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)

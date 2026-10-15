@@ -99,6 +99,7 @@ fun ScreenshotDetailScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val allScreenshots by viewModel.allScreenshots.collectAsState()
+    val isPremium by viewModel.isPremium.collectAsState()
     val screenshot = allScreenshots.firstOrNull { it.id == screenshotId }
 
     var showDeleteConfirm by remember { mutableStateOf(false) }
@@ -197,7 +198,7 @@ fun ScreenshotDetailScreen(
             )
         },
         bottomBar = {
-            AdMobBanner()
+            AdMobBanner(isPremium = isPremium)
         }
     ) { paddingValues ->
         Column(

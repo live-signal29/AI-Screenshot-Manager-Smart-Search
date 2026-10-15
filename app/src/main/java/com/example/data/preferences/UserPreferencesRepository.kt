@@ -25,6 +25,7 @@ class UserPreferencesRepository(private val context: Context) {
         val AI_API_ENDPOINT = stringPreferencesKey("ai_api_endpoint")
         val AI_CONSENT_ACCEPTED = booleanPreferencesKey("ai_consent_accepted")
         val LAST_SCAN_TIMESTAMP = longPreferencesKey("last_scan_timestamp")
+        val IS_PREMIUM = booleanPreferencesKey("is_premium")
     }
 
     val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data.map { prefs ->
@@ -61,6 +62,14 @@ class UserPreferencesRepository(private val context: Context) {
 
     val lastScanTimestamp: Flow<Long> = context.dataStore.data.map { prefs ->
         prefs[Keys.LAST_SCAN_TIMESTAMP] ?: 0L
+    }
+
+    val isPremium: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[Keys.IS_PREMIUM] ?: false
+    }
+
+    suspend fun setPremium(premium: Boolean) {
+        context.dataStore.edit { it[Keys.IS_PREMIUM] = premium }
     }
 
     suspend fun setOnboardingCompleted(completed: Boolean) {
