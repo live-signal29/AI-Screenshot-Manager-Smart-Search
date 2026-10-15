@@ -38,19 +38,6 @@ jobs:
           echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
           yes | sdkmanager --licenses || true
 
-      - name: Restore Debug Keystore (Fallback)
-        run: |
-          if [ -f "debug.keystore.base64" ]; then
-            echo "Decoding debug.keystore.base64..."
-            base64 -d debug.keystore.base64 > debug.keystore
-          fi
-          if [ ! -f "debug.keystore" ]; then
-            echo "Generating debug.keystore with keytool..."
-            keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          fi
-          echo "Debug keystore status:"
-          ls -la debug.keystore
-
       - name: Ensure .env file
         run: |
           touch .env
@@ -66,37 +53,36 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew || true
 
-      - name: Setup Keystore from Secrets (If Available)
+      - name: Setup Keystore from Secrets
         env:
           KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          KEY_ALIAS_VAL: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD_VAL: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD_VAL: ${{ secrets.STORE_PASSWORD }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Decoding release keystore..."
             echo "$KEYSTORE_BASE64" | base64 --decode > /tmp/release.keystore
-            echo "KEYSTORE_PATH=/tmp/release.keystore" >> $GITHUB_ENV
-            echo "KEY_ALIAS=${{ secrets.KEY_ALIAS }}" >> $GITHUB_ENV
-            echo "KEY_PASSWORD=${{ secrets.KEY_PASSWORD }}" >> $GITHUB_ENV
-            echo "STORE_PASSWORD=${{ secrets.STORE_PASSWORD }}" >> $GITHUB_ENV
+            
+            # Create signing properties or export env variables for Gradle signing configuration
+            echo "STORE_FILE=/tmp/release.keystore" >> $GITHUB_ENV
+            echo "KEY_ALIAS=$KEY_ALIAS_VAL" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=$KEY_PASSWORD_VAL" >> $GITHUB_ENV
+            echo "STORE_PASSWORD=$STORE_PASSWORD_VAL" >> $GITHUB_ENV
+            echo "Signing configuration applied successfully."
           else
-            echo "No signing secrets provided, building unsigned/default release."
+            echo "Warning: SIGNING_KEYSTORE_BASE64 secret is missing! Release builds might be unsigned or fail if signingConfig is mandatory."
           fi
 
       - name: Build Release APK
         if: ${{ github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both' || github.event_name == 'push' }}
         run: |
-          if [ -f "./gradlew" ]; then
-            ./gradlew assembleRelease --no-daemon --stacktrace
-          else
-            gradle assembleRelease --no-daemon --stacktrace
-          fi
+          ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Build Google Play AAB Bundle
         if: ${{ github.event.inputs.build_type == 'aab' || github.event.inputs.build_type == 'both' || github.event_name == 'push' }}
         run: |
-          if [ -f "./gradlew" ]; then
-            ./gradlew bundleRelease --no-daemon --stacktrace
-          else
-            gradle bundleRelease --no-daemon --stacktrace
-          fi
+          ./gradlew bundleRelease --no-daemon --stacktrace
 
       - name: Upload Release APK
         if: ${{ github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both' || github.event_name == 'push' }}
