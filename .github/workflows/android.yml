@@ -38,12 +38,9 @@ jobs:
           echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
           yes | sdkmanager --licenses || true
 
-      - name: Restore or Generate Debug Keystore (Fallback)
+      - name: Generate Debug Keystore (needed by debug config)
         run: |
           cd "$GITHUB_WORKSPACE"
-          if [ -f "debug.keystore.base64" ]; then
-            base64 -d debug.keystore.base64 > debug.keystore || true
-          fi
           if [ ! -s "debug.keystore" ]; then
             rm -f debug.keystore
             keytool -genkey -v -keystore debug.keystore \
@@ -51,16 +48,8 @@ jobs:
               -keyalg RSA -keysize 2048 -validity 10000 \
               -dname "CN=Android Debug,O=Android,C=US"
           fi
-          # Har possible jagah copy
-          mkdir -p app ~/.android
-          cp debug.keystore app/debug.keystore
+          mkdir -p ~/.android
           cp debug.keystore ~/.android/debug.keystore
-          ls -la debug.keystore app/debug.keystore
-          # Default signing env (secrets milne par neeche override ho jayega)
-          echo "STORE_FILE=$GITHUB_WORKSPACE/debug.keystore" >> $GITHUB_ENV
-          echo "KEY_ALIAS=androiddebugkey" >> $GITHUB_ENV
-          echo "KEY_PASSWORD=android" >> $GITHUB_ENV
-          echo "STORE_PASSWORD=android" >> $GITHUB_ENV
 
       - name: Ensure .env file
         run: |
@@ -77,24 +66,27 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew || true
 
-      - name: Setup Keystore from Secrets (If Available)
+      - name: Setup Release Keystore from Secrets
         env:
           KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
           KEY_ALIAS_VAL: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD_VAL: ${{ secrets.KEY_PASSWORD }}
           STORE_PASSWORD_VAL: ${{ secrets.STORE_PASSWORD }}
         run: |
-          if [ -n "$KEYSTORE_BASE64" ]; then
-            echo "Decoding release keystore..."
-            echo "$KEYSTORE_BASE64" | base64 --decode > /tmp/release.keystore
-            echo "STORE_FILE=/tmp/release.keystore" >> $GITHUB_ENV
-            echo "KEY_ALIAS=$KEY_ALIAS_VAL" >> $GITHUB_ENV
-            echo "KEY_PASSWORD=$KEY_PASSWORD_VAL" >> $GITHUB_ENV
-            echo "STORE_PASSWORD=$STORE_PASSWORD_VAL" >> $GITHUB_ENV
-            echo "Release signing configuration loaded."
-          else
-            echo "Warning: SIGNING_KEYSTORE_BASE64 not found. Using debug keystore."
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "ERROR: SIGNING_KEYSTORE_BASE64 secret missing. Release build would use wrong key."
+            exit 1
           fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > /tmp/release.keystore
+          echo "STORE_FILE=/tmp/release.keystore" >> $GITHUB_ENV
+          echo "KEYSTORE_PATH=/tmp/release.keystore" >> $GITHUB_ENV
+          echo "KEY_ALIAS=$KEY_ALIAS_VAL" >> $GITHUB_ENV
+          echo "KEY_PASSWORD=$KEY_PASSWORD_VAL" >> $GITHUB_ENV
+          echo "STORE_PASSWORD=$STORE_PASSWORD_VAL" >> $GITHUB_ENV
+          echo "Release signing configuration loaded."
+          echo "Keystore SHA1 (Play Console expects A7:76:37:37...):"
+          keytool -list -v -keystore /tmp/release.keystore \
+            -storepass "$STORE_PASSWORD_VAL" -alias "$KEY_ALIAS_VAL" | grep "SHA1"
 
       - name: Build Release APK
         if: ${{ github.event.inputs.build_type == 'apk' || github.event.inputs.build_type == 'both' || github.event_name == 'push' }}
